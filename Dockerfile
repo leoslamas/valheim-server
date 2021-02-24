@@ -28,7 +28,7 @@ ENV PUID=1000
 ENV PGID=1000
 
 # Set up timezone information
-ENV TZ=America/Los_Angeles
+ENV TZ=America/Sao_Paulo
 
 # Server Specific env variables.
 ENV PORT "2456"
