@@ -15,4 +15,5 @@ echo "Starting Valheim server..."
 
 # start server
 runuser -l steam -c 'rm -f /home/steam/valheim/nohup.out'
+runuser -l steam -c 'cd /home/steam/Steam; ./steamcmd.sh +login anonymous +force_install_dir /home/steam/valheim +app_update 896660 +quit'
 runuser -l steam -c 'cd /home/steam/valheim; nohup ./start_server.sh &'
