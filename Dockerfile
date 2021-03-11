@@ -48,6 +48,9 @@ ENV AUTO_BACKUP_REMOVE_OLD "1"
 ENV AUTO_BACKUP_DAYS_TO_LIVE "3"
 ENV AUTO_BACKUP_ON_UPDATE "0"
 ENV AUTO_BACKUP_ON_SHUTDOWN "0"
+ENV BACKUP_TO_S3 "1"
+ENV S3_BUCKET "amnesicbit"
+ENV S3_KEY "valheim/backups/"
 
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh

@@ -4,10 +4,15 @@ use flate2::Compression;
 use log::{debug, error};
 use std::fs::File;
 use std::process::exit;
+use crate::utils::fetch_env;
+use rusoto;
 
 pub fn invoke(args: &ArgMatches) {
   let input = args.value_of("INPUT_DIR").unwrap();
   let output = args.value_of("OUTPUT_FILE").unwrap();
+  let s3_bucket = fetch_env("S3_BUCKET", "amnsicbit", false);
+  let s3_key = fetch_env("S3_KEY", "backups/", false);
+
   debug!("Creating archive of {}", input);
   debug!("Output set to {}", output);
   let tar_gz = match File::create(output) {
