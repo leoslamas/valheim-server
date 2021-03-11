@@ -33,9 +33,9 @@ ENV TZ=America/Sao_Paulo
 # Server Specific env variables.
 ENV PORT "2456"
 ENV NAME "Valheim Docker"
-ENV WORLD "Dedicated"
-ENV PUBLIC "1"
-ENV PASSWORD "12345"
+ENV WORLD "World1"
+ENV PUBLIC "0"
+ENV PASSWORD "inicio@1"
 
 # Auto Update Configs
 ENV AUTO_UPDATE "0"
