@@ -75,6 +75,12 @@ pub fn invoke(args: &ArgMatches) {
     error!("The supplied password is too short! It much be 5 characters or greater!");
     exit(1)
   }
+  
+  let restore_on_startup = fetch_env("RESTORE_ON_STARTUP", false, false);
+  if restore_on_startup {
+    info!("Restoring worlds...")
+  }
+
   let dry_run: bool = args.is_present("dry_run");
   debug!("Dry run condition: {}", dry_run);
   info!("Looking for burial mounds...");
