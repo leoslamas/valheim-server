@@ -76,7 +76,7 @@ pub fn invoke(args: &ArgMatches) {
     exit(1)
   }
   
-  let restore_on_startup = fetch_env("RESTORE_ON_STARTUP", false, false);
+  let restore_on_startup = fetch_env("RESTORE_ON_STARTUP", "0", false).eq("1");
   if restore_on_startup {
     info!("Restoring worlds...")
   }
