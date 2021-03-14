@@ -136,9 +136,9 @@ if [ "${AUTO_BACKUP}" -eq 1 ]; then
 fi
 
 # Restore backup
-if [ "${RESTORE_ON_STARTUP}" -eq 1 ]; then
-    #TODO
-fi
+#if [ "${RESTORE_ON_STARTUP}" -eq 1 ]; then
+#    #TODO
+#fi
 
 # Apply cron job
 if [ "${AUTO_BACKUP}" -eq 1 ] || [ "${AUTO_UPDATE}" -eq 1 ]; then

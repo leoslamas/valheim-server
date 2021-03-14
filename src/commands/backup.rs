@@ -1,22 +1,21 @@
-use crate::utils::fetch_env;
 use clap::ArgMatches;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use log::{debug, error};
-use std::process::exit;
-use std::{fs::File, io::Read};
+use std::{path, process::exit};
+use std::{fs::File};
+use path_abs;
 
-use rusoto_core::{self, ByteStream, Region};
-use rusoto_s3::{self, PutObjectRequest, S3Client, S3};
-use tokio;
+use crate::aws::s3::{S3Sync};
+use crate::utils::fetch_env;
 
 pub fn invoke(args: &ArgMatches) {
   let input = args.value_of("INPUT_DIR").unwrap();
   let output = args.value_of("OUTPUT_FILE").unwrap();
-
   let backup_to_s3 = fetch_env("BACKUP_TO_S3", "0", false).eq("1");
-  let s3_bucket = fetch_env("S3_BUCKET", "amnesicbit", false);
-  let s3_key = fetch_env("S3_KEY", "backups/", false);
+
+  let bucket = fetch_env("S3_BUCKET", "amnesicbit", false);
+  let key = fetch_env("S3_KEY", "valheim/backups/", false);
 
   debug!("Creating archive of {}", input);
   debug!("Output set to {}", output);
@@ -37,32 +36,17 @@ pub fn invoke(args: &ArgMatches) {
     }
   };
 
-  if !backup_to_s3 {
-    return;
+  if backup_to_s3 {
+    match File::open(output) {
+        Ok(file) => {
+          S3Sync::new(bucket, key).upload(file);
+          debug!("Backup uploaded to S3 successfully!");
+        },
+        Err(_) => {
+          error!("Failed to upload {} to backup file", input);
+          exit(1)
+        }
+    }
   }
-  if let Ok(mut file) = File::open(output) {
-    let mut buf: Vec<u8> = vec![];
-    file.read_to_end(&mut buf).unwrap();
-    let byte_stream = ByteStream::from(buf);
 
-    let client = S3Client::new(Region::SaEast1);
-    let request = PutObjectRequest {
-      body: Some(byte_stream),
-      bucket: s3_bucket,
-      key: s3_key,
-      content_type: Some("application/zip".to_string()),
-      acl: Some("public-read".to_string()),
-      ..Default::default()
-    };
-
-    let rt = tokio::runtime::Builder::new_current_thread().build().unwrap();
-
-    match rt.block_on(client.put_object(request)) {
-        Ok(_) => debug!("Backup file uploaded to S3!"),
-        Err(_) => error!("Failed to upload backup ({}) to S3", output)
-    };
-    
-  } else {
-    error!("Failed to open backup file ({})", output)
-  }
 }

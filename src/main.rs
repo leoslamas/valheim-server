@@ -12,6 +12,7 @@ mod logger;
 mod messages;
 mod steamcmd;
 mod utils;
+mod aws;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 static LOGGER: OdinLogger = OdinLogger;
