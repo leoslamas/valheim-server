@@ -21,8 +21,8 @@ pub fn invoke(args: &ArgMatches) {
   debug!("Output set to {}", output);
   let tar_gz = match File::create(output) {
     Ok(file) => file,
-    Err(_) => {
-      error!("Failed to create backup file at {}", output);
+    Err(e) => {
+      error!("Failed to create backup file at {}. #Error: {:?}", output, e);
       exit(1)
     }
   };
@@ -30,8 +30,8 @@ pub fn invoke(args: &ArgMatches) {
   let mut tar = tar::Builder::new(enc);
   match tar.append_dir_all("saves", input) {
     Ok(_) => debug!("Successfully created backup zip at {}", output),
-    Err(_) => {
-      error!("Failed to add {} to backup file", input);
+    Err(e) => {
+      error!("Failed to add {} to backup file. Error: {:?}", input, e);
       exit(1)
     }
   };
@@ -42,8 +42,8 @@ pub fn invoke(args: &ArgMatches) {
           S3Sync::new(bucket, key).upload(file);
           debug!("Backup uploaded to S3 successfully!");
         },
-        Err(_) => {
-          error!("Failed to upload {} to backup file", input);
+        Err(e) => {
+          error!("Failed to upload {} to backup file. #Error: {:?}", input, e);
           exit(1)
         }
     }

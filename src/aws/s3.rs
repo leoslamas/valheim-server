@@ -39,7 +39,7 @@ impl S3Sync {
 
     match self.resolve(self.client.put_object(request)) {
       Ok(_) => debug!("Backup file uploaded to S3!"),
-      Err(_) => error!("Failed to upload backup ({:?}) to S3!", file)
+      Err(e) => error!("Failed to upload backup ({:?}) to S3!. #Error: {:?}", file, e)
     }
   }
 
@@ -56,7 +56,7 @@ impl S3Sync {
         //TODO
         output.body;
       },
-      Err(_) => error!("Failed to download backup from S3!")
+      Err(e) => error!("Failed to download backup from S3!. #Error: {:?}", e)
     }
   }
 

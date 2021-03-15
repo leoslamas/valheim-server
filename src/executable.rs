@@ -10,8 +10,8 @@ pub fn find_command(executable: &str) -> Option<Command> {
   } else {
     match which::which(executable) {
       Ok(executable_path) => Option::from(Command::new(executable_path)),
-      Err(_e) => {
-        error!("Failed to find {} in path", executable);
+      Err(e) => {
+        error!("Failed to find {} in path. #Error: {:?}", executable, e);
         None
       }
     }

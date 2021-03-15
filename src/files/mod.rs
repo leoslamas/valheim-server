@@ -24,8 +24,8 @@ pub fn create_file(path: &str) -> File {
   let output_path = Path::new(path);
   match File::create(output_path) {
     Ok(file) => file,
-    Err(_) => {
-      error!("Failed to create {}", path);
+    Err(e) => {
+      error!("Failed to create {}. #Error: {:?}", path, e);
       exit(1)
     }
   }
@@ -42,8 +42,8 @@ pub trait FileManager {
         info!("Successfully deleted {}", self.path());
         true
       }
-      Err(_) => {
-        error!("Did not find or could not delete {}", self.path());
+      Err(e) => {
+        error!("Did not find or could not delete {}. #Error: {:?}", self.path(), e);
         false
       }
     }
