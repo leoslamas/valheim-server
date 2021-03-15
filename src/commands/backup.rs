@@ -2,7 +2,7 @@ use clap::ArgMatches;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use log::{debug, error};
-use std::{path, process::exit};
+use std::{process::exit};
 use std::{fs::File};
 use path_abs;
 

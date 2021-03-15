@@ -42,7 +42,7 @@ pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
     port: get_variable(args, "port", "2456".to_string()),
     name: get_variable(args, "name", "Valheim powered by Odin".to_string()),
     world: get_variable(args, "world", "Dedicated".to_string()),
-    public: get_variable(args, "public", "1".to_string()),
+    public: get_variable(args, "public", "0".to_string()),
     password: get_variable(args, "password", "12345".to_string()),
     command,
   };

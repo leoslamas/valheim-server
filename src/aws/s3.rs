@@ -4,27 +4,22 @@ use log::{debug, error};
 use rusoto_core::{ByteStream, Region};
 use rusoto_s3::{GetObjectRequest, PutObjectRequest, S3, S3Client};
 use std::{fs::File, future::Future, io::Read};
-use tokio::runtime;
+use futures::executor;
 
 pub struct S3Sync {
   bucket: String,
   key: String,
-  client: S3Client,
-  runtime: runtime::Runtime,
+  client: S3Client
 }
 
 impl S3Sync {
   pub fn new(bucket: String, key: String) -> Self {
     let cl = S3Client::new(Region::SaEast1);
-    let rt = runtime::Builder::new_current_thread()
-      .build()
-      .unwrap();
 
     S3Sync {
       bucket,
       key,
       client: cl,
-      runtime: rt,
     }
   }
 
@@ -66,6 +61,6 @@ impl S3Sync {
   }
 
   fn resolve<F: Future>(&self, future: F) -> F::Output {
-    self.runtime.block_on(future)
+    executor::block_on(future)
   }
 }
