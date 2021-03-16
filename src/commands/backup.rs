@@ -4,7 +4,6 @@ use flate2::Compression;
 use log::{debug, error};
 use std::{process::exit};
 use std::{fs::File};
-use path_abs;
 
 use crate::aws::s3::{S3Sync};
 use crate::utils::fetch_env;
@@ -38,8 +37,8 @@ pub fn invoke(args: &ArgMatches) {
 
   if backup_to_s3 {
     match File::open(output) {
-        Ok(file) => {
-          S3Sync::new(bucket, key).upload(file);
+        Ok(_) => {
+          S3Sync::new(bucket, key).upload(output);
           debug!("Backup uploaded to S3 successfully!");
         },
         Err(e) => {
