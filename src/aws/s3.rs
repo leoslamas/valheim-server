@@ -3,7 +3,7 @@
 use log::{debug, error};
 use rusoto_core::*;
 use rusoto_s3::{PutObjectRequest, S3, S3Client, StreamingBody};
-use std::{future::Future, path::Path};
+use std::{fs::{File, read}, future::Future, path::Path};
 use tokio::runtime;
 
 pub struct S3Sync {
@@ -44,14 +44,19 @@ impl S3Sync {
 
   async fn do_upload(&self,file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     debug!("File path: {}", file_path);
-    let file = std::fs::read(file_path).unwrap();
+    let file = File::open(file_path).unwrap();
     let path = Path::new(file_path);
+    let size = file.metadata().unwrap().len();
+
+    debug!("File size: {}", size);
+    let reader = read(path).unwrap();
 
     self.client.put_object(PutObjectRequest {
         bucket: self.bucket.to_owned(),
         key: format!("{}{}", self.key.to_owned(), path.file_name().unwrap().to_str().unwrap()),
-        body: Some(StreamingBody::from(file)),
-        ..Default::default()
+        content_type: Some("application/tar+gzip".to_string()),
+        body: Some(StreamingBody::from(reader)),
+        ..PutObjectRequest::default()
     }).await?;
     
     Ok(())
