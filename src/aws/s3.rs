@@ -2,8 +2,8 @@
 
 use log::{debug, error};
 use rusoto_core::*;
-use rusoto_s3::{GetObjectRequest, PutObjectRequest, S3, S3Client};
-use std::{fs::File, future::Future, io::Read, path::Path, process::exit};
+use rusoto_s3::{PutObjectRequest, S3, S3Client, StreamingBody};
+use std::{future::Future, path::Path};
 use tokio::runtime;
 
 pub struct S3Sync {
@@ -31,53 +31,30 @@ impl S3Sync {
 
   pub fn upload(&self, file_path: &str) {
     debug!("Starting upload of {}", file_path);
-    let mut buf: Vec<u8> = vec![];
-    
-    let path = Path::new(file_path);
-    match File::open(file_path) {
-      Ok(mut file) => {
-        file.read_to_end(&mut buf).unwrap();
-      },
-      Err(e) => {
-        error!("Unable to read backup file. #Error: {}", e);
-        exit(1);
-      }
-    }
-    
-    debug!("Buffer size: {}", buf.len());
 
-    let request = PutObjectRequest {
-      body: Some(buf.into()),
-      bucket: self.bucket.to_owned(),
-      key: format!("{}{}", self.key.to_owned(), path.file_name().unwrap().to_str().unwrap()),
-      content_type: Some("application/x-tgz".to_string()),
-      acl: Some("public-read".to_string()),
-      ..Default::default()
-    };
-
-    match self.resolve(self.client.put_object(request)) {
-      Ok(_) => debug!("Backup file uploaded to S3!"),
-      Err(e) => { 
-        error!("Failed to upload backup ({}) to S3!. #Error: {:?}", path.file_name().unwrap().to_str().unwrap(), e)
-      }
+    match self.resolve(self.do_upload(file_path)) {
+        Ok(_) => {
+          debug!("Backup successfully uploaded!");
+        }
+        Err(e) => {
+          error!("Unable to upload backup file!. #Error: {}", e);
+        }
     }
   }
 
-  pub fn download(&self) {
-    let request = GetObjectRequest {
-      bucket: self.bucket.to_owned(),
-      key: self.key.to_owned(),
-      ..Default::default()
-    };
+  async fn do_upload(&self,file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    debug!("File path: {}", file_path);
+    let file = std::fs::read(file_path).unwrap();
+    let path = Path::new(file_path);
 
-    match self.resolve(self.client.get_object(request)) {
-      Ok(output) => {
-        debug!("Backup file downloaded from S3!");
-        //TODO
-        output.body;
-      },
-      Err(e) => error!("Failed to download backup from S3!. #Error: {:?}", e)
-    }
+    self.client.put_object(PutObjectRequest {
+        bucket: self.bucket.to_owned(),
+        key: format!("{}{}", self.key.to_owned(), path.file_name().unwrap().to_str().unwrap()),
+        body: Some(StreamingBody::from(file)),
+        ..Default::default()
+    }).await?;
+    
+    Ok(())
   }
 
   fn resolve<F: Future>(&self, future: F) -> F::Output {
