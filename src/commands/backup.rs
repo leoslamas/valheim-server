@@ -25,7 +25,7 @@ pub fn invoke(args: &ArgMatches) {
         debug!("Backup file created!");
       }
       Err(e) => {
-        error!("Unable to create backup file!. #Error: {}", e);
+        error!("Unable to create backup file!. \n#Error: {}", e);
       }
   };
 
@@ -36,7 +36,7 @@ pub fn invoke(args: &ArgMatches) {
           debug!("Backup uploaded to S3 successfully!");
         },
         Err(e) => {
-          error!("Failed to upload {} to backup file. #Error: {:?}", input, e);
+          error!("An error occurred while uploading backup file. \n#Error: {:?}", e);
           exit(1)
         }
     }

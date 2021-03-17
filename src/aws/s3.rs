@@ -2,8 +2,8 @@
 
 use log::{debug, error};
 use rusoto_core::*;
-use rusoto_s3::{PutObjectRequest, S3, S3Client, StreamingBody};
-use std::{fs::{File, read}, future::Future, path::Path};
+use rusoto_s3::{CopyObjectRequest, PutObjectRequest, S3, S3Client, StreamingBody};
+use std::{fs::{read, File}, future::Future, path::Path, process::exit};
 use tokio::runtime;
 
 pub struct S3Sync {
@@ -37,7 +37,8 @@ impl S3Sync {
           debug!("Backup successfully uploaded!");
         }
         Err(e) => {
-          error!("Unable to upload backup file!. #Error: {}", e);
+          error!("Error setting up backup file!. #Error: {}", e);
+          exit(1)
         }
     }
   }
@@ -47,18 +48,56 @@ impl S3Sync {
     let file = File::open(file_path).unwrap();
     let path = Path::new(file_path);
     let size = file.metadata().unwrap().len();
+    let put_key = format!(
+      "{}{}",
+      self.key.to_owned(),
+      path.file_name().unwrap().to_str().unwrap()
+    );
+    let copy_key = format!("{}{}", self.key.to_owned(), "backup.zip");
+    let content_type = Some("application/zip".to_string());
+    let acl = Some("public-read".to_string());
 
     debug!("File size: {}", size);
     let reader = read(path).unwrap();
 
-    self.client.put_object(PutObjectRequest {
+    debug!("Put key: {}{}", self.bucket.to_owned(), put_key.to_owned());
+    debug!("Copy key: {}{}", self.bucket.to_owned(), copy_key.to_owned());
+
+    self
+      .client
+      .put_object(PutObjectRequest {
         bucket: self.bucket.to_owned(),
-        key: format!("{}{}", self.key.to_owned(), path.file_name().unwrap().to_str().unwrap()),
-        content_type: Some("application/zip".to_string()),
+        key: put_key.to_owned(),
         body: Some(StreamingBody::from(reader)),
+        content_type: content_type.to_owned(),
+        acl: acl.to_owned(),
         ..PutObjectRequest::default()
-    }).await?;
-    
+      })
+      .await.or_else(|e| {
+        error!("Unable to put object.");
+        Err(e)
+      })?;
+          
+
+    self
+      .client
+      .copy_object(CopyObjectRequest {
+        bucket: self.bucket.to_owned(),
+        key: copy_key.to_owned(),
+        copy_source: put_key.to_owned(),
+        content_type: content_type.to_owned(),
+        acl: acl.to_owned(),
+        ..CopyObjectRequest::default()
+      })
+      .await.or_else(|e| {
+        error!("Unable to copy object.");
+        Err(e)
+      })?;
+
+    Ok(())
+  }
+
+  async fn do_download(&self, _dst_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
   }
 

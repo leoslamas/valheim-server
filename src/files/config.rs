@@ -33,7 +33,7 @@ pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
   ))) {
     std::result::Result::Ok(command_path) => command_path.to_str().unwrap().to_string(),
     std::result::Result::Err(e) => {
-      error!("Failed to find server executable! Please run `odin install`. #Error: {:?}", e);
+      error!("Failed to find server executable! Please run `odin install`. \n#Error: {:?}", e);
       exit(1)
     }
   };
