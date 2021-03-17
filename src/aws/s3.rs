@@ -54,7 +54,7 @@ impl S3Sync {
     self.client.put_object(PutObjectRequest {
         bucket: self.bucket.to_owned(),
         key: format!("{}{}", self.key.to_owned(), path.file_name().unwrap().to_str().unwrap()),
-        content_type: Some("application/tar+gzip".to_string()),
+        content_type: Some("application/zip".to_string()),
         body: Some(StreamingBody::from(reader)),
         ..PutObjectRequest::default()
     }).await?;
