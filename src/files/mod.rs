@@ -1,4 +1,5 @@
 pub mod config;
+pub mod zip;
 
 use crate::executable::create_execution;
 use crate::utils::get_working_dir;

@@ -1,9 +1,14 @@
-#![allow(dead_code)]
-
 use log::{debug, error};
 use rusoto_core::*;
-use rusoto_s3::{CopyObjectRequest, PutObjectRequest, S3, S3Client, StreamingBody};
-use std::{fs::{read, File}, future::Future, path::Path, process::exit};
+use rusoto_s3::{
+  CopyObjectRequest, GetObjectRequest, PutObjectRequest, S3Client, StreamingBody, S3,
+};
+use std::{
+  fs::{read, File},
+  future::Future,
+  path::Path,
+  process::exit,
+};
 use tokio::runtime;
 
 pub struct S3Sync {
@@ -33,17 +38,35 @@ impl S3Sync {
     debug!("Starting upload of {}", file_path);
 
     match self.resolve(self.do_upload(file_path)) {
-        Ok(_) => {
-          debug!("Backup successfully uploaded!");
-        }
-        Err(e) => {
-          error!("Error setting up backup file!. #Error: {}", e);
-          exit(1)
-        }
+      Ok(_) => {
+        debug!("Backup successfully uploaded!");
+      }
+      Err(e) => {
+        error!("Error setting up backup file!. #Error: {}", e);
+        exit(1)
+      }
     }
   }
 
-  async fn do_upload(&self,file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+  pub fn _download(&self, dst_path: &str) {
+    let file_path = format!(
+      "{}{}backup.zip",
+      self.bucket.to_owned(),
+      self.key.to_owned()
+    );
+
+    match self.resolve(self.do_download(&file_path, dst_path)) {
+      Ok(_) => {
+        debug!("Backup successfully downloaded!");
+      }
+      Err(e) => {
+        error!("Error downloading backup file!. #Error: {}", e);
+        exit(1)
+      }
+    }
+  }
+
+  async fn do_upload(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     debug!("File path: {}", file_path);
     let file = File::open(file_path).unwrap();
     let path = Path::new(file_path);
@@ -55,41 +78,46 @@ impl S3Sync {
     );
     let copy_key = format!("{}{}", self.key.to_owned(), "backup.zip");
     let content_type = Some("application/zip".to_string());
-    let acl = Some("public-read".to_string());
+    let acl = Some("public-read-write".to_string());
 
     debug!("File size: {}", size);
     let reader = read(path).unwrap();
 
     debug!("Put key: {}{}", self.bucket.to_owned(), put_key.to_owned());
-    debug!("Copy key: {}{}", self.bucket.to_owned(), copy_key.to_owned());
+    debug!(
+      "Copy key: {}{}",
+      self.bucket.to_owned(),
+      copy_key.to_owned()
+    );
 
     self
       .client
       .put_object(PutObjectRequest {
         bucket: self.bucket.to_owned(),
         key: put_key.to_owned(),
-        body: Some(StreamingBody::from(reader)),
+        body: Some(StreamingBody::from(reader.to_owned())),
         content_type: content_type.to_owned(),
         acl: acl.to_owned(),
         ..PutObjectRequest::default()
       })
-      .await.or_else(|e| {
+      .await
+      .or_else(|e| {
         error!("Unable to put object.");
         Err(e)
       })?;
-          
 
-    self
+      self
       .client
-      .copy_object(CopyObjectRequest {
+      .put_object(PutObjectRequest {
         bucket: self.bucket.to_owned(),
         key: copy_key.to_owned(),
-        copy_source: put_key.to_owned(),
+        body: Some(StreamingBody::from(reader.to_owned())),
         content_type: content_type.to_owned(),
         acl: acl.to_owned(),
-        ..CopyObjectRequest::default()
+        ..PutObjectRequest::default()
       })
-      .await.or_else(|e| {
+      .await
+      .or_else(|e| {
         error!("Unable to copy object.");
         Err(e)
       })?;
@@ -97,7 +125,21 @@ impl S3Sync {
     Ok(())
   }
 
-  async fn do_download(&self, _dst_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+  async fn do_download(
+    &self,
+    file_path: &str,
+    dst_path: &str,
+  ) -> Result<(), Box<dyn std::error::Error>> {
+    self
+      .client
+      .get_object(GetObjectRequest {
+        ..GetObjectRequest::default()
+      })
+      .await
+      .or_else(|e| {
+        error!("Unable to get object.");
+        Err(e)
+      })?;
     Ok(())
   }
 
