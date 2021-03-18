@@ -118,3 +118,45 @@ pub fn do_unzip(src: &str, _dst: &str) {
     }
   }
 }
+
+#[cfg(test)]
+
+mod test {
+  use super::*;
+
+  fn setup(paths: &[&Path]) {
+    for path in paths {
+      if path.exists() && path.is_file() {
+        println!("# Removing zip file.");
+        std::fs::remove_file(path).unwrap();
+      }
+      if path.exists() && path.is_dir() {
+        println!("# Removing unzipped folder.");
+        std::fs::remove_dir_all(path).unwrap();
+      }
+    }
+  }
+
+  #[test]
+  fn test_zip() {
+    let zip_path = Path::new("src_test.zip");
+    setup(&[zip_path]);
+
+    do_zip("src", "src_test.zip").unwrap();
+    assert!(zip_path.exists() && zip_path.is_file());
+  }
+
+  #[test]
+  fn test_unzip() {
+    let zip_path = Path::new("src_test.zip");
+    let path = Path::new("final_test");
+    setup(&[zip_path, path]);
+
+    do_zip("src", "src_test.zip").unwrap();
+    assert!(zip_path.exists() && zip_path.is_file());
+
+    do_unzip("src_test.zip", "final_test");
+    assert!(path.exists() && path.is_dir());
+  }
+
+}
