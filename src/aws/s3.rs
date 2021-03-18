@@ -1,15 +1,10 @@
 use log::{debug, error};
 use rusoto_core::*;
 use rusoto_s3::{
-  CopyObjectRequest, GetObjectRequest, PutObjectRequest, S3Client, StreamingBody, S3,
+  GetObjectRequest, PutObjectRequest, S3Client, StreamingBody, S3,
 };
-use std::{
-  fs::{read, File},
-  future::Future,
-  path::Path,
-  process::exit,
-};
-use tokio::runtime;
+use std::{fs::{read, File}, future::Future, io::Write, path::Path, process::exit};
+use tokio::{io::AsyncReadExt, runtime};
 
 pub struct S3Sync {
   bucket: String,
@@ -48,29 +43,8 @@ impl S3Sync {
     }
   }
 
-  pub fn _download(&self, dst_path: &str) {
-    let file_path = format!(
-      "{}{}backup.zip",
-      self.bucket.to_owned(),
-      self.key.to_owned()
-    );
-
-    match self.resolve(self.do_download(&file_path, dst_path)) {
-      Ok(_) => {
-        debug!("Backup successfully downloaded!");
-      }
-      Err(e) => {
-        error!("Error downloading backup file!. #Error: {}", e);
-        exit(1)
-      }
-    }
-  }
-
   async fn do_upload(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
-    debug!("File path: {}", file_path);
-    let file = File::open(file_path).unwrap();
     let path = Path::new(file_path);
-    let size = file.metadata().unwrap().len();
     let put_key = format!(
       "{}{}",
       self.key.to_owned(),
@@ -80,15 +54,7 @@ impl S3Sync {
     let content_type = Some("application/zip".to_string());
     let acl = Some("public-read-write".to_string());
 
-    debug!("File size: {}", size);
     let reader = read(path).unwrap();
-
-    debug!("Put key: {}{}", self.bucket.to_owned(), put_key.to_owned());
-    debug!(
-      "Copy key: {}{}",
-      self.bucket.to_owned(),
-      copy_key.to_owned()
-    );
 
     self
       .client
@@ -106,6 +72,7 @@ impl S3Sync {
         Err(e)
       })?;
 
+      //TODO make this a copy-object
       self
       .client
       .put_object(PutObjectRequest {
@@ -125,21 +92,48 @@ impl S3Sync {
     Ok(())
   }
 
+  pub fn download_backup(&self, dst_path: &str) {
+    match self.resolve(self.do_download(dst_path)) {
+      Ok(_) => {
+        debug!("Backup successfully downloaded!");
+      }
+      Err(e) => {
+        error!("Error downloading backup file!. #Error: {}", e);
+        exit(1)
+      }
+    }
+  }
+
   async fn do_download(
     &self,
-    file_path: &str,
     dst_path: &str,
   ) -> Result<(), Box<dyn std::error::Error>> {
-    self
+    let key = format!("{}{}", self.key.to_owned(), "backup.zip");
+
+    match self
       .client
       .get_object(GetObjectRequest {
+        bucket: self.bucket.to_owned(),
+        key: key,
         ..GetObjectRequest::default()
       })
-      .await
-      .or_else(|e| {
-        error!("Unable to get object.");
-        Err(e)
-      })?;
+      .await {
+          Ok(out) => {
+            debug!("Content length: {}", out.content_length.unwrap());
+            let stream = out.body.unwrap();
+            let mut buf = Vec::with_capacity(out.content_length.unwrap() as usize);
+            stream.into_async_read().read_to_end(&mut buf).await?;
+
+            let mut backup_file = File::create(dst_path)?;
+            backup_file.write_all(&buf)?;
+          }
+
+          Err(e) => {
+            error!("Unable to download backup file.");
+            return Err(Box::new(e));
+          }
+      }
+
     Ok(())
   }
 
