@@ -68,16 +68,19 @@ where
   Result::Ok(())
 }
 
-pub fn do_unzip(src: &str, _dst: &str) {
+pub fn do_unzip(src: &str, dst: &str) {
   let fname = std::path::Path::new(src);
   let file = File::open(&fname).unwrap();
+  let out_dir = Path::new(dst);
 
   let mut archive = zip::ZipArchive::new(file).unwrap();
 
   for i in 0..archive.len() {
     let mut file = archive.by_index(i).unwrap();
     let outpath = match file.enclosed_name() {
-      Some(path) => path.to_owned(),
+      Some(path) => {
+        out_dir.join(path.to_owned())
+      }
       None => continue,
     };
 
@@ -157,6 +160,8 @@ mod test {
 
     do_unzip("src_test.zip", "final_test");
     assert!(path.exists() && path.is_dir());
+
+    setup(&[zip_path, path]);
   }
 
 }
