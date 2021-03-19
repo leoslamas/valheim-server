@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use log::{debug, error};
 use rusoto_core::*;
 use rusoto_s3::{
@@ -5,6 +7,8 @@ use rusoto_s3::{
 };
 use std::{fs::{read, File}, future::Future, io::Write, path::Path, process::exit};
 use tokio::{io::AsyncReadExt, runtime};
+
+use crate::utils::fetch_env;
 
 pub struct S3Sync {
   bucket: String,
@@ -15,6 +19,23 @@ pub struct S3Sync {
 
 impl S3Sync {
   pub fn new(bucket: String, key: String) -> Self {
+    let cl = S3Client::new(Region::SaEast1);
+    let rt = runtime::Builder::new_current_thread()
+      .enable_io()
+      .build()
+      .unwrap();
+
+    S3Sync {
+      bucket,
+      key,
+      client: cl,
+      runtime: rt,
+    }
+  }
+
+  pub fn new_default() -> Self {
+    let bucket = fetch_env("S3_BUCKET", "amnesicbit", false);
+    let key = fetch_env("S3_KEY", "valheim/backups/", false);
     let cl = S3Client::new(Region::SaEast1);
     let rt = runtime::Builder::new_current_thread()
       .enable_io()

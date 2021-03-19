@@ -54,6 +54,9 @@ ENV AUTO_BACKUP_ON_UPDATE "0"
 ENV AUTO_BACKUP_ON_SHUTDOWN "0"
 ENV BACKUP_TO_S3 "1"
 ENV RESTORE_ON_STARTUP "1"
+#ENV RESTORE_PATH
+#ENV S3_BUCKET
+#ENV S3_KEY
 
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh

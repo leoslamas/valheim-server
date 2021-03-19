@@ -2,7 +2,7 @@ use clap::ArgMatches;
 use log::{debug, error};
 use std::{fs::File, process::exit};
 
-use crate::aws::s3::{S3Sync};
+use crate::aws::s3::S3Sync;
 use crate::utils::fetch_env;
 use crate::files::zip;
 
@@ -10,9 +10,6 @@ pub fn invoke(args: &ArgMatches) {
   let input = args.value_of("INPUT_DIR").unwrap();
   let output = args.value_of("OUTPUT_FILE").unwrap();
   let backup_to_s3 = fetch_env("BACKUP_TO_S3", "0", false).eq("1");
-
-  let bucket = fetch_env("S3_BUCKET", "amnesicbit", false);
-  let key = fetch_env("S3_KEY", "valheim/backups/", false);
 
   debug!("Creating archive of {}", input);
   debug!("Output set to {}", output);
@@ -29,7 +26,7 @@ pub fn invoke(args: &ArgMatches) {
   if backup_to_s3 {
     match File::open(output) {
         Ok(_) => {
-          S3Sync::new(bucket, key).upload(output);
+          S3Sync::new_default().upload(output);
           debug!("Backup uploaded to S3 successfully!");
         },
         Err(e) => {

@@ -1,15 +1,17 @@
 mod bepinex;
 
-use crate::commands::start::bepinex::{build_environment, is_bepinex_installed};
-use crate::executable::create_execution;
-use crate::files::config::{config_file, read_config};
-use crate::files::{create_file, ValheimArguments};
-use crate::messages::modding_disclaimer;
-use crate::utils::{fetch_env, get_working_dir};
 use clap::ArgMatches;
 use daemonize::Daemonize;
 use log::{debug, error, info};
-use std::process::{exit, Child};
+use std::{fs, process::{exit, Child}};
+
+use crate::commands::start::bepinex::{build_environment, is_bepinex_installed};
+use crate::executable::create_execution;
+use crate::files::config::{config_file, read_config};
+use crate::files::{zip, create_file, ValheimArguments};
+use crate::messages::modding_disclaimer;
+use crate::utils::{fetch_env, get_working_dir};
+use crate::aws::s3::S3Sync;
 
 const LD_LIBRARY_PATH_VAR: &str = "LD_LIBRARY_PATH";
 const LD_PRELOAD_VAR: &str = "LD_PRELOAD";
@@ -32,6 +34,7 @@ fn spawn_server(config: &ValheimArguments) -> std::io::Result<Child> {
     format!("{}/linux64", get_working_dir()).as_str(),
     true,
   );
+
   debug!("Setting up base command");
   let base_command = command
     .args(&[
@@ -78,7 +81,15 @@ pub fn invoke(args: &ArgMatches) {
   
   let restore_on_startup = fetch_env("RESTORE_ON_STARTUP", "0", false).eq("1");
   if restore_on_startup {
-    info!("Restoring worlds...")
+    info!("Restoring worlds and configs from S3...");
+    let backup_file = "/tmp/backup.zip";
+    let restore_path = fetch_env(
+      "RESTORE_PATH", 
+      "/home/steam/.config/unity3d/IronGate/Valheim/", 
+      false);
+    S3Sync::new_default().download_backup(backup_file);
+    zip::do_unzip(backup_file, restore_path.as_str());
+    fs::remove_file(backup_file).unwrap_or_default();
   }
 
   let dry_run: bool = args.is_present("dry_run");
