@@ -37,6 +37,13 @@ ENV WORLD "World1"
 ENV PUBLIC "0"
 ENV PASSWORD "inicio@1"
 
+ENV DEBUG_MODE "1"
+
+# Ports
+EXPOSE 2456-2458/udp
+EXPOSE 2456-2458/tcp
+EXPOSE 80 8080
+
 # AWS credentials
 ENV AWS_ACCESS_KEY_ID "***REMOVED***"
 ENV AWS_SECRET_ACCESS_KEY "***REMOVED***"
@@ -57,6 +64,9 @@ ENV RESTORE_ON_STARTUP "1"
 #ENV RESTORE_PATH
 #ENV S3_BUCKET
 #ENV S3_KEY
+
+# Discord Webhooks
+ENV WEBHOOK_URL "***REMOVED***"
 
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh

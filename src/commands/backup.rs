@@ -27,13 +27,15 @@ pub fn invoke(args: &ArgMatches) {
     match File::open(output) {
         Ok(_) => {
           S3Sync::new_default().upload(output);
-          debug!("Backup uploaded to S3 successfully!");
+          println!("Backup uploaded to S3 successfully!");
         },
         Err(e) => {
           error!("An error occurred while uploading backup file. \n#Error: {:?}", e);
           exit(1)
         }
     }
+  } else {
+    println!("Backup to S3 disabled.");
   }
 
 }

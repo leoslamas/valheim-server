@@ -135,11 +135,6 @@ if [ "${AUTO_BACKUP}" -eq 1 ]; then
     "AUTO_BACKUP_REMOVE_OLD=${AUTO_BACKUP_REMOVE_OLD} AUTO_BACKUP_DAYS_TO_LIVE=${AUTO_BACKUP_DAYS_TO_LIVE}"
 fi
 
-# Restore backup
-#if [ "${RESTORE_ON_STARTUP}" -eq 1 ]; then
-#    #TODO
-#fi
-
 # Apply cron job
 if [ "${AUTO_BACKUP}" -eq 1 ] || [ "${AUTO_UPDATE}" -eq 1 ]; then
     cat /etc/cron.d/* | crontab -
