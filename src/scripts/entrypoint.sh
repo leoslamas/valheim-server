@@ -121,7 +121,7 @@ if [ "${AUTO_UPDATE}" -eq 1 ]; then
     "auto-update" \
     "auto_update.sh" \
     "${AUTO_UPDATE_SCHEDULE}" \
-    "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:-0}"
+    "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:-0} DEBUG_MODE=${DEBUG_MODE}"
 fi
 
 if [ "${AUTO_BACKUP}" -eq 1 ]; then
@@ -132,7 +132,12 @@ if [ "${AUTO_BACKUP}" -eq 1 ]; then
     "auto-backup"               \
     "auto_backup.sh"            \
     "${AUTO_BACKUP_SCHEDULE}"   \
-    "AUTO_BACKUP_REMOVE_OLD=${AUTO_BACKUP_REMOVE_OLD} AUTO_BACKUP_DAYS_TO_LIVE=${AUTO_BACKUP_DAYS_TO_LIVE}"
+    "AUTO_BACKUP_REMOVE_OLD=${AUTO_BACKUP_REMOVE_OLD} \
+AUTO_BACKUP_DAYS_TO_LIVE=${AUTO_BACKUP_DAYS_TO_LIVE} \
+BACKUP_TO_S3=${BACKUP_TO_S3} \
+AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+DEBUG_MODE=${DEBUG_MODE}"
 fi
 
 # Apply cron job

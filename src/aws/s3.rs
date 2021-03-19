@@ -21,7 +21,7 @@ impl S3Sync {
   pub fn new(bucket: String, key: String) -> Self {
     let cl = S3Client::new(Region::SaEast1);
     let rt = runtime::Builder::new_current_thread()
-      .enable_io()
+      .enable_all()
       .build()
       .unwrap();
 
@@ -36,18 +36,7 @@ impl S3Sync {
   pub fn new_default() -> Self {
     let bucket = fetch_env("S3_BUCKET", "amnesicbit", false);
     let key = fetch_env("S3_KEY", "valheim/backups/", false);
-    let cl = S3Client::new(Region::SaEast1);
-    let rt = runtime::Builder::new_current_thread()
-      .enable_io()
-      .build()
-      .unwrap();
-
-    S3Sync {
-      bucket,
-      key,
-      client: cl,
-      runtime: rt,
-    }
+    S3Sync::new(bucket, key)
   }
 
   pub fn upload(&self, file_path: &str) {
